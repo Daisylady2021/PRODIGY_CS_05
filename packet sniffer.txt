@@ -1,0 +1,36 @@
+import scapy.all as scapy
+import argparse
+
+def get_interface():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-i", "--interface", dest="interface", help="Specify interface on which to sniff packets")
+    arguments = parser.parse_args()
+    return arguments.interface
+
+def sniff(iface, filter="tcp"):
+    scapy.sniff(iface=iface, filter=filter, store=False, prn=process_packet)
+
+def process_packet(packet):
+    if packet.haslayer(scapy.TCP):
+        # Extract relevant information
+        src_ip = packet[scapy.IP].src
+        dst_ip = packet[scapy.IP].dst
+        src_port = packet[scapy.TCP].sport
+        dst_port = packet[scapy.TCP].dport
+        
+        # Print basic information
+        print(f"TCP Packet: Src: {src_ip}:{src_port} -> Dst: {dst_ip}:{dst_port}")
+        
+        # Extract HTTP data if available
+        if packet.haslayer(scapy.Raw):
+            load = packet[scapy.Raw].load.decode('utf-8', errors='ignore')
+            if "HTTP/1." in load:
+                # Parse HTTP headers and body
+                # ...
+    else:
+        # Handle other protocols (e.g., UDP, ICMP)
+        pass
+
+if __name__ == "__main__":
+    iface = get_interface()
+    sniff(iface)
